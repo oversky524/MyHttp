@@ -27,7 +27,7 @@ public class Request {
             mPort = getPort(url);
             mHost = url.getHost();
             Map<String, Object> headers = builder.mHeaders;
-            if(!headers.containsKey("connection")) headers.put("connection", "keep-alive");
+//            if(!headers.containsKey("connection")) headers.put("connection", "keep-alive");
             mEssential = buildHttpHeaders(builder.mMethod, url.getPath(), headers, mHost);
             Body body = builder.mBody;
             if(body != null) mBody = body.getBody();

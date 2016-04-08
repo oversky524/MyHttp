@@ -46,7 +46,7 @@ public class MyHttpClient {
         boolean firstLine = true;
         StringBuffer sb = new StringBuffer();
         while ((readByte = inputStream.read()) != -1){
-            if(readByte == '\r'){
+            if(readByte == '\r'){//正常情况下，一个header应该以\r\n结尾
                 inputStream.read();//consume '\n'
                 if(firstLine){
                     firstLine = false;
@@ -58,6 +58,20 @@ public class MyHttpClient {
                 readByte = inputStream.read();
                 if(readByte == '\r'){
                     inputStream.read();//consume '\n'
+                    break;
+                }else{
+                    inputStream.unread(readByte);//push back
+                }
+            }else if(readByte == '\n'){//有时，一个header也以\n结尾
+                if(firstLine){
+                    firstLine = false;
+                    parseResponseLine(sb.toString(), response);
+                }else{
+                    parseHeader(sb.toString(), response);
+                }
+                sb.setLength(0);
+                readByte = inputStream.read();
+                if(readByte == '\n'){
                     break;
                 }else{
                     inputStream.unread(readByte);//push back
