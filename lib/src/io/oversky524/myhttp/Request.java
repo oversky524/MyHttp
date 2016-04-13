@@ -20,14 +20,16 @@ public class Request {
     private int mPort = -1;
     private String mEssential;
     private byte[] mBody;
+    private String mUrl;
 
     private Request(Builder builder){
         try {
+            mUrl = builder.mUrl;
             URL url = new URL(builder.mUrl);
             mPort = getPort(url);
             mHost = url.getHost();
             Map<String, Object> headers = builder.mHeaders;
-//            if(!headers.containsKey("connection")) headers.put("connection", "keep-alive");
+            if(!headers.containsKey("connection")) headers.put("connection", "keep-alive");
             mEssential = buildHttpHeaders(builder.mMethod, url.getPath(), headers, mHost);
             Body body = builder.mBody;
             if(body != null) mBody = body.getBody();
@@ -74,6 +76,22 @@ public class Request {
     public String getHost(){ return mHost; }
 
     public int getPort(){ return mPort; }
+
+    @Override
+    public int hashCode() {
+        return mUrl.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null || obj.getClass() != getClass()) return false;
+
+        if(((Request)obj).mUrl.equals(mUrl)){
+            return true;
+        }else {
+            return false;
+        }
+    }
 
     public static class Builder{
         private String mUrl;

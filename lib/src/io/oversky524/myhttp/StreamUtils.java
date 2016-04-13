@@ -9,12 +9,14 @@ public class StreamUtils {
     private StreamUtils(){ throw new AssertionError("No instance"); }
 
     public static void copy(InputStream inputStream, boolean closeInput,
-                            OutputStream outputStream, boolean closeOutput) throws IOException {
+                            OutputStream outputStream, boolean closeOutput, long length) throws IOException {
         inputStream = new BufferedInputStream(inputStream);
         outputStream = new BufferedOutputStream(outputStream);
         byte[] buffer = new byte[1024];
         int readSize;
-        while ((readSize = inputStream.read(buffer)) != -1){
+        long leftSize = length;
+        while ( leftSize > 0 && (readSize = inputStream.read(buffer)) != -1){
+            leftSize -= readSize;
             outputStream.write(buffer, 0, readSize);
         }
         outputStream.flush();

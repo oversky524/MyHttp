@@ -8,15 +8,19 @@ import java.util.Map;
  * Created by gaochao on 2016/4/6.
  */
 public class MyHttpClient {
+    private ConnectionPool mPool = new ConnectionPool();
 
     private MyHttpClient(Builder builder){
     }
 
     public Response execute(Request request){
-        Response response = new Response();
         final String host = request.getHost();
         final int port = request.getPort();
-        try(Socket socket = new Socket(host, port)){
+        Connection connection = mPool.getConnection(host, port);
+        System.out.println(connection);
+        Response response = connection.put(request);
+        try{
+            Socket socket = connection.getSocket();
             writeRequest(request, socket);
             parseResponse(socket, response);
             if(DEBUG){
@@ -25,7 +29,7 @@ public class MyHttpClient {
                     System.out.println(key + ": " + headers.get(key));
                 }
             }
-            response.getBytesBody();
+            response.setInputStream(new ReleaseConnectionInputStream(connection, request));
         } catch (IOException e) {
             e.printStackTrace();
             response.setErrorThrowable(e);
@@ -42,7 +46,7 @@ public class MyHttpClient {
 
     private static void parseResponse(Socket socket, Response response) throws IOException {
         PushbackInputStream inputStream = new PushbackInputStream(socket.getInputStream());
-        int readByte;
+        int readByte = 0;
         boolean firstLine = true;
         StringBuffer sb = new StringBuffer();
         while ((readByte = inputStream.read()) != -1){
@@ -52,7 +56,7 @@ public class MyHttpClient {
                     firstLine = false;
                     parseResponseLine(sb.toString(), response);
                 }else{
-                    parseHeader(sb.toString(), response);
+                    HeaderUtils.parseHeader(sb.toString(), response);
                 }
                 sb.setLength(0);
                 readByte = inputStream.read();
@@ -67,7 +71,7 @@ public class MyHttpClient {
                     firstLine = false;
                     parseResponseLine(sb.toString(), response);
                 }else{
-                    parseHeader(sb.toString(), response);
+                    HeaderUtils.parseHeader(sb.toString(), response);
                 }
                 sb.setLength(0);
                 readByte = inputStream.read();
@@ -80,7 +84,6 @@ public class MyHttpClient {
                 sb.append((char)readByte);
             }
         }
-        response.setInputStream(inputStream);
     }
 
     private static void parseResponseLine(String line, Response response){
@@ -90,13 +93,6 @@ public class MyHttpClient {
         while (line.charAt(++index) == ' ');
         String code = line.substring(index, line.indexOf(' ', index));
         response.setStatusCode(Integer.valueOf(code));
-    }
-
-    private static void parseHeader(String pair, Response response){
-        int index = pair.indexOf(':');
-        String key = pair.substring(0, index).trim();
-        String value = pair.substring(index + 1).trim();
-        response.putHeader(key, value);
     }
 
     private static final boolean DEBUG = true;
@@ -110,5 +106,42 @@ public class MyHttpClient {
         }*/
 
         public MyHttpClient build(){ return new MyHttpClient(this); }
+    }
+
+    private static class ReleaseConnectionInputStream extends FilterInputStream{
+        private Connection mConnection;
+        private Request mRequest;
+
+        ReleaseConnectionInputStream(Connection connection, Request request) throws IOException {
+            super(connection.getSocket().getInputStream());
+            mConnection = connection;
+            mRequest = request;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if(mConnection == null) return -1;
+            return release(super.read());
+        }
+
+        @Override
+        public int read(byte[] b) throws IOException {
+            if(mConnection == null) return -1;
+            return release(super.read(b));
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if(mConnection == null) return -1;
+            return release(super.read(b, off, len));
+        }
+
+        private int release(int result){
+            if(result == -1){
+                mConnection.release(mRequest);
+                mConnection = null;
+            }
+            return result;
+        }
     }
 }

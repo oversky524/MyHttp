@@ -6,6 +6,9 @@ import com.alibaba.fastjson.JSONObject;
  * Created by gaochao on 2016/2/17.
  */
 public class HttpUtils {
+    public interface Header{
+        String CONTENT_LENGTH = "content-length";
+    }
     private HttpUtils(){ throw new AssertionError("No instances"); }
 
     public static final String METHOD_POST = "POST";

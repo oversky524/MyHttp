@@ -37,10 +37,11 @@ public class Response {
 
     public byte[] getBytesBody() throws IOException {
         if(mByteBody == null) {
+            long length = Long.valueOf(mHeaders.get(HttpUtils.Header.CONTENT_LENGTH));
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
             BufferedOutputStream outputStream = new BufferedOutputStream(byteArrayOutputStream);
-            BufferedInputStream inputStream = new BufferedInputStream(mInputStream);
-            StreamUtils.copy(inputStream, false, outputStream, false);
+            BufferedInputStream inputStream = new BufferedInputStream(getInputStreamBody());
+            StreamUtils.copy(inputStream, false, outputStream, false, length);
             byte[] body = byteArrayOutputStream.toByteArray();
             outputStream.close();
             mByteBody = body;
