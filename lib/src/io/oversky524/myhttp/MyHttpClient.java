@@ -40,7 +40,8 @@ public class MyHttpClient {
     private static void writeRequest(Request request, Socket socket) throws IOException {
         BufferedOutputStream outputStream = new BufferedOutputStream(socket.getOutputStream());
         outputStream.write(request.getHeaders().getBytes());
-        outputStream.write(request.getBody());
+        byte[] body = request.getBody();
+        if(body != null) outputStream.write(body);
         outputStream.flush();
     }
 
