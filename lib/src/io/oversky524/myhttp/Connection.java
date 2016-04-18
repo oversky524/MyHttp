@@ -21,6 +21,7 @@ public class Connection {
     Connection(String host, int port){
         try {
             mSocket = new Socket(host, port);
+            mSocket.setSoTimeout(5 * 1000);
             if(DEBUG){
                 System.out.println(mSocket + "\n");
             }

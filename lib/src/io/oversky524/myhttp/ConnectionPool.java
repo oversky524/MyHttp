@@ -3,6 +3,7 @@ package io.oversky524.myhttp;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -13,7 +14,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ConnectionPool {
 //    private static final long DEFAULT_ALIVE_DURATION_MS = 5 * 60 * 1000;//5 min
-    private static final long DEFAULT_ALIVE_DURATION_MS = 30 * 1000;//5 min
+    private static final long DEFAULT_ALIVE_DURATION_MS = 20 * 1000;//5 min
     private static final int DEFAULT_MAX_CONNECTIONS = 5;
     private static int sMaxConnections;
     private static long sAliveDuration;
@@ -108,7 +109,7 @@ public class ConnectionPool {
     }
 
     public synchronized Connection getConnection(String host, int port){
-        String key = host + ":" + port;
+        String key = key(host, port);
         boolean empty = mPool.isEmpty();
         Connection connection = mPool.get(key);
         if(connection != null && connection.shouldClose(mAliveDuration)){
@@ -123,4 +124,11 @@ public class ConnectionPool {
         if(empty) mCleanupExecutor.execute(mCleanupRunnable);
         return connection;
     }
+
+    void removeConnection(String host, int port){
+        Connection connection = mPool.remove(key(host, port));
+        connection.closeSafely();
+    }
+
+    private static String key(String host, int port){ return host + ":" + port; }
 }

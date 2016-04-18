@@ -57,7 +57,7 @@ public class Request {
     private static String buildHttpHeaders(String method, String path, Map<String, Object> headers, String host){
         final String newLine = "\r\n";
         StringBuffer sb = new StringBuffer();
-        sb.append(method).append(" ").append(path).append(" HTTP/1.0").append(newLine);
+        sb.append(method).append(" ").append(path).append(" HTTP/1.1").append(newLine);
         if(!headers.containsKey("host")) headers.put("Host", host);
         Set<String> keySet = headers.keySet();
         for(String key : keySet){
