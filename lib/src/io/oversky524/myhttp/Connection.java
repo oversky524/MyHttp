@@ -78,7 +78,7 @@ public class Connection {
                 if(mSocket.getInputStream().read() == -1) result = true;
             } catch (IOException e) {
                 e.printStackTrace();
-                result = e instanceof SocketTimeoutException;
+                result = !(e instanceof SocketTimeoutException);
             } finally {
                 mSocket.setSoTimeout(readTimeout);
             }
