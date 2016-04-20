@@ -8,7 +8,7 @@ import java.util.Map;
  * Created by gaochao on 2016/4/6.
  */
 public class Response {
-    private int mStatusCode;
+    private int mStatusCode = Integer.MIN_VALUE;
     private String mVersion;
     private Throwable mErrorThrowable;
     private LinkedHashMap<String, String> mHeaders = new LinkedHashMap<>();
@@ -60,4 +60,6 @@ public class Response {
     }
 
     public InputStream getInputStreamBody(){ return new BufferedInputStream(mInputStream); }
+
+    public boolean isInvalide(){ return mStatusCode == Integer.MIN_VALUE; }
 }

@@ -2,6 +2,8 @@ package io.oversky524.myhttp;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -33,7 +35,7 @@ public class Connection {
 
     public boolean shouldClose(long aliveDuration){
         if(mIdleAt == Long.MAX_VALUE) return false;
-        if(mIdleAt + aliveDuration <= System.nanoTime()) return true;
+        if(mIdleAt + aliveDuration <= System.nanoTime() || readTest()) return true;
         return false;
     }
 
@@ -66,5 +68,24 @@ public class Connection {
             e.printStackTrace();
         }
         if(DEBUG) System.out.println(mSocket + " is closed safely");
+    }
+
+    private boolean readTest(){
+        boolean result = false;
+        try {
+            int readTimeout = mSocket.getSoTimeout();
+            try {
+                mSocket.setSoTimeout(1);
+                if(mSocket.getInputStream().read() == -1) result = true;
+            } catch (IOException e) {
+                e.printStackTrace();
+                result = !(e instanceof SocketTimeoutException);
+            } finally {
+                mSocket.setSoTimeout(readTimeout);
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 }

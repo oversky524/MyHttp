@@ -17,23 +17,31 @@ public class MyHttpClient {
     public Response execute(Request request){
         final String host = request.getHost();
         final int port = request.getPort();
-        Connection connection = mPool.getConnection(host, port);
-        System.out.println(connection);
-        Response response = connection.put(request);
-        try{
-            Socket socket = connection.getSocket();
-            writeRequest(request, socket);
-            parseResponse(socket, response);
-            if(DEBUG){
-                Map<String, String> headers = response.getHeaders();
-                for (String key : headers.keySet()){
-                    System.out.println(key + ": " + headers.get(key));
+        Response response;
+        while (true){
+            Connection connection = mPool.getConnection(host, port);
+            System.out.println(connection);
+            response = connection.put(request);
+            try{
+                Socket socket = connection.getSocket();
+                writeRequest(request, socket);
+                parseResponse(socket, response);
+                if(DEBUG){
+                    Map<String, String> headers = response.getHeaders();
+                    for (String key : headers.keySet()){
+                        System.out.println(key + ": " + headers.get(key));
+                    }
                 }
+                response.setInputStream(new ReleaseConnectionInputStream(connection, request));
+                break;
+            } catch (IOException e) {
+                e.printStackTrace();
+                response.setErrorThrowable(e);
+                break;
+            } catch (RemoveConnectionRetryException e){
+                e.printStackTrace();
+                mPool.removeConnection(host, port);
             }
-            response.setInputStream(new ReleaseConnectionInputStream(connection, request));
-        } catch (IOException e) {
-            e.printStackTrace();
-            response.setErrorThrowable(e);
         }
         return response;
     }
@@ -41,7 +49,8 @@ public class MyHttpClient {
     private static void writeRequest(Request request, Socket socket) throws IOException {
         BufferedOutputStream outputStream = new BufferedOutputStream(socket.getOutputStream());
         request.writeRequestLineAndHeaders(outputStream);
-        request.getBody().write(outputStream);
+        Request.Body body = request.getBody();
+        if(body != null) body.write(outputStream);
         outputStream.flush();
     }
 
@@ -86,6 +95,7 @@ public class MyHttpClient {
                 sb.append((char)readByte);
             }
         }
+        if(response.isInvalide()) throw new RemoveConnectionRetryException();
     }
 
     private static void parseResponseLine(String line, Response response){
@@ -98,12 +108,6 @@ public class MyHttpClient {
     }
 
     public static class Builder{
-        /*private ConnectionPool connectionPool;
-
-        public Builder setConnectionPool(ConnectionPool pool){
-            connectionPool = pool;
-            return this;
-        }*/
 
         public MyHttpClient build(){ return new MyHttpClient(this); }
     }
