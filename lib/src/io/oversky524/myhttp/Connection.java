@@ -13,6 +13,7 @@ public class Connection {
     private Map<Request, Response> requests = new LinkedHashMap<>();
     private Socket mSocket;
     private long mIdleAt = Long.MAX_VALUE;
+    private static final int READ_TIMEOUT = 10 * 1000;//10s
 
     public long idleAt(){ return mIdleAt; }
 
@@ -21,6 +22,7 @@ public class Connection {
     Connection(String host, int port){
         try {
             mSocket = new Socket(host, port);
+            mSocket.setSoTimeout(READ_TIMEOUT);
             if(DEBUG){
                 System.out.println(mSocket + "\n");
             }

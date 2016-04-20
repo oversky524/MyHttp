@@ -8,22 +8,28 @@ import com.alibaba.fastjson.JSONObject;
 public class HttpUtils {
     public interface Header{
         String CONTENT_LENGTH = "content-length";
+        String CONTENT_TYPE = "content-type";
+        String CONTENT_DISPOSITION = "content-disposition";
     }
     private HttpUtils(){ throw new AssertionError("No instances"); }
 
-    public static final String METHOD_POST = "POST";
-    public static final String METHOD_PATCH = "PATCH";
-    public static final String METHOD_PUT = "PUT";
-    public static final String METHOD_DELETE = "DELETE";
-    public static final String METHOD_GET = "GET";
-    public static final String METHOD_OPTIONS = "OPTIONS";
-    public static final String METHOD_HEAD = "HEAD";
-    public static final String METHOD_TRACE = "TRACE";
-    public static final String METHOD_CONNECT = "CONNECT";
+    public interface Method{
+        String POST = "POST";
+        String PATCH = "PATCH";
+        String PUT = "PUT";
+        String DELETE = "DELETE";
+        String GET = "GET";
+        String OPTIONS = "OPTIONS";
+        String HEAD = "HEAD";
+        String TRACE = "TRACE";
+        String CONNECT = "CONNECT";
+    }
 
-    public static final String CONTENT_TYPE_JSON = "application/json";
-    public static final String CONTENT_TYPE_MULTIPART = "multipart/form-data";
-    public static final String CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded";
+    public interface ContentType{
+        String JSON = "application/json";
+        String MULTIPART = "multipart/mixed";
+        String FORM_URLENCODED = "application/x-www-form-urlencoded";
+    }
 
     public static String getJsonBody(Object ... keyValuePairs){
         final int len = keyValuePairs.length;

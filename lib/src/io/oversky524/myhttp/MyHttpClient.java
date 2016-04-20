@@ -8,6 +8,7 @@ import java.util.Map;
  * Created by gaochao on 2016/4/6.
  */
 public class MyHttpClient {
+    private static final boolean DEBUG = false;
     private ConnectionPool mPool = new ConnectionPool();
 
     private MyHttpClient(Builder builder){
@@ -39,8 +40,8 @@ public class MyHttpClient {
 
     private static void writeRequest(Request request, Socket socket) throws IOException {
         BufferedOutputStream outputStream = new BufferedOutputStream(socket.getOutputStream());
-        outputStream.write(request.getHeaders().getBytes());
-        outputStream.write(request.getBody());
+        request.writeRequestLineAndHeaders(outputStream);
+        request.getBody().write(outputStream);
         outputStream.flush();
     }
 
@@ -49,6 +50,7 @@ public class MyHttpClient {
         int readByte = 0;
         boolean firstLine = true;
         StringBuffer sb = new StringBuffer();
+
         while ((readByte = inputStream.read()) != -1){
             if(readByte == '\r'){//正常情况下，一个header应该以\r\n结尾
                 inputStream.read();//consume '\n'
@@ -95,8 +97,6 @@ public class MyHttpClient {
         response.setStatusCode(Integer.valueOf(code));
     }
 
-    private static final boolean DEBUG = true;
-
     public static class Builder{
         /*private ConnectionPool connectionPool;
 
@@ -138,10 +138,16 @@ public class MyHttpClient {
 
         private int release(int result){
             if(result == -1){
+                System.out.println("result=" + result);
                 mConnection.release(mRequest);
                 mConnection = null;
             }
             return result;
+        }
+
+        @Override
+        public void close() throws IOException {
+            release(-1);
         }
     }
 }

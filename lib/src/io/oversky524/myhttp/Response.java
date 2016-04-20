@@ -36,15 +36,25 @@ public class Response {
     public Map<String, String> getHeaders(){ return mHeaders; }
 
     public byte[] getBytesBody() throws IOException {
-        if(mByteBody == null) {
-            long length = Long.valueOf(mHeaders.get(HttpUtils.Header.CONTENT_LENGTH));
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
-            BufferedOutputStream outputStream = new BufferedOutputStream(byteArrayOutputStream);
-            BufferedInputStream inputStream = new BufferedInputStream(getInputStreamBody());
-            StreamUtils.copy(inputStream, false, outputStream, false, length);
-            byte[] body = byteArrayOutputStream.toByteArray();
-            outputStream.close();
-            mByteBody = body;
+        if(mErrorThrowable != null){
+            mErrorThrowable.printStackTrace();
+            return mErrorThrowable.getMessage().getBytes();
+        }
+        try {
+            if(mByteBody == null) {
+                long length = Long.valueOf(mHeaders.get(HttpUtils.Header.CONTENT_LENGTH));
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
+                BufferedOutputStream outputStream = new BufferedOutputStream(byteArrayOutputStream);
+                BufferedInputStream inputStream = new BufferedInputStream(getInputStreamBody());
+                StreamUtils.copy(inputStream, false, outputStream, false, length);
+                byte[] body = byteArrayOutputStream.toByteArray();
+                outputStream.close();
+                mByteBody = body;
+                inputStream.close();
+            }
+        }catch (Throwable e){
+            e.printStackTrace();
+            mByteBody = "".getBytes();
         }
         return mByteBody;
     }
