@@ -108,8 +108,11 @@ public class ConnectionPool {
         mAliveDuration = TimeUnit.MILLISECONDS.toNanos(aliveDuration);
     }
 
-    public synchronized Connection getConnection(String host, int port){
-        String key = key(host, port);
+    public synchronized Connection getConnection(Request request){
+        String host = request.host();
+        int port = request.port();
+        String scheme = request.scheme();
+        String key = key(scheme, host, port);
         boolean empty = mPool.isEmpty();
         Connection connection = mPool.get(key);
         if(connection != null && connection.shouldClose(mAliveDuration)){
@@ -118,17 +121,17 @@ public class ConnectionPool {
             connection = null;
         }
         if(connection == null){
-            connection = new Connection(host, port);
+            connection = new Connection(scheme, host, port);
             mPool.put(key, connection);
         }
         if(empty) mCleanupExecutor.execute(mCleanupRunnable);
         return connection;
     }
 
-    void removeConnection(String host, int port){
-        Connection connection = mPool.remove(key(host, port));
+    void removeConnection(Request request){
+        Connection connection = mPool.remove(key(request.scheme(), request.host(), request.port()));
         connection.closeSafely();
     }
 
-    private static String key(String host, int port){ return host + ":" + port; }
+    private static String key(String scheme, String host, int port){ return scheme + ":" + host + ":" + port; }
 }

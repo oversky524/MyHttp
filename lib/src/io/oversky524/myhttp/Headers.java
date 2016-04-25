@@ -4,41 +4,58 @@ import com.sun.istack.internal.NotNull;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Created by gaochao on 2016/4/19.
  */
 public class Headers {
-    private TreeMap<String,Object> mHeaders = new TreeMap<>();
+    private ArrayList<String> mHeaders = new ArrayList<>();
+    private boolean mBelongtoResponse;
+
+    public Headers(boolean response){ mBelongtoResponse = response; }
+
+    public Headers(){ this(false); }
 
     public Headers header(@NotNull String header, Object value){
         header = header.toLowerCase();
-        if(header.equals("content-type") || header.equals("content-length")){
+        if(!mBelongtoResponse && (header.equals("content-type") || header.equals("content-length"))){
             throw new RuntimeException("header " + header + " should be added by a body");
         }
-        mHeaders.put(header, value);
+        mHeaders.add(header);
+        mHeaders.add(value.toString());
         return this;
     }
 
     public Headers headers(@NotNull Request.Body body) throws IOException {
-        mHeaders.put(HttpUtils.Header.CONTENT_LENGTH, body.getContentLength());
-        mHeaders.put(HttpUtils.Header.CONTENT_TYPE, body.getContentType());
+        mHeaders.add(HttpUtils.Header.CONTENT_LENGTH);
+        mHeaders.add(String.valueOf(body.getContentLength()));
+        mHeaders.add(HttpUtils.Header.CONTENT_TYPE);
+        mHeaders.add(body.getContentType());
         return this;
     }
 
     public void write(@NotNull OutputStream outputStream) throws IOException {
-        final String newLine = "\r\n";
-        for(Map.Entry<String, Object> entry : mHeaders.entrySet()){
-            outputStream.write(entry.getKey().getBytes());
-            outputStream.write(": ".getBytes());
-            outputStream.write(entry.getValue().toString().getBytes());
-            outputStream.write(newLine.getBytes());
+        final byte[] newLine = { '\r', '\n'};
+        final byte[] separator = {':', ' '};
+        ArrayList<String> headers = mHeaders;
+        for(int i=0, size=headers.size(); i<size; i+=2){
+            outputStream.write(headers.get(i).getBytes());
+            outputStream.write(separator);
+            outputStream.write(headers.get(i+1).getBytes());
+            outputStream.write(newLine);
         }
     }
 
-    public Object header(@NotNull String header){ return mHeaders.get(header); }
+    public String header(@NotNull String header){
+        ArrayList<String> headers = mHeaders;
+        for(int i=0, size=headers.size(); i<size; i+=2){
+            if(header.equalsIgnoreCase(headers.get(i))){
+                return headers.get(i+1);
+            }
+        }
+        return null;
+    }
 
     public static Headers of(@NotNull String header, Object...args){
         if(args.length < 1) throw new RuntimeException("There is a header value at least!");
@@ -51,5 +68,26 @@ public class Headers {
             headers.header(header, args[i+1]);
         }
         return headers;
+    }
+
+    public Map<String, List<String>> toMap(){
+        Map<String, List<String>> result = new HashMap<>();
+        ArrayList<String> headers = mHeaders;
+        for(int i=0, size=headers.size(); i<size; i+=2){
+            List<String> value = new ArrayList<>();
+            value.add(headers.get(i+1));
+            result.put(headers.get(i), value);
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        ArrayList<String> headers = mHeaders;
+        for(int i=0, size=headers.size(); i<size; i+=2){
+            sb.append(headers.get(i)).append(": ").append(headers.get(i+1)).append('\n');
+        }
+        return sb.toString();
     }
 }

@@ -10,6 +10,11 @@ public class HttpUtils {
         String CONTENT_LENGTH = "content-length";
         String CONTENT_TYPE = "content-type";
         String CONTENT_DISPOSITION = "content-disposition";
+
+        String SET_COOKIE = "set-cookie";
+        String SET_COOKIE2 = "set-cookie2";
+        String COOKIE = "cookie";
+        String COOKIE2 = "cookie2";
     }
     private HttpUtils(){ throw new AssertionError("No instances"); }
 

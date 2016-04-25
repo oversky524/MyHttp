@@ -3,9 +3,7 @@ import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.*;
 
 /**
@@ -23,13 +21,19 @@ public class Request {
     private String mMethod;
     private String mPath;
     private Headers mHeaders;
+    private URI mURI;
+    private String mScheme;
 
     private Request(Builder builder) {
         try {
             mUrl = builder.mUrl;
             mMethod = builder.mMethod;
             URL url = new URL(builder.mUrl);
-            mPath = url.getPath();
+            mURI = url.toURI();
+            mScheme = url.getProtocol();
+            String path = url.getPath();
+            if(path == null || path.length() < 1) path = "/";
+            mPath = path;
             mPort = getPort(url);
             mHost = url.getHost();
             mBody = builder.mBody;
@@ -38,9 +42,10 @@ public class Request {
             if (mHeaders.header("host") == null) mHeaders.header("host", mHost);
         } catch (MalformedURLException e) {
             e.printStackTrace();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
-
 
     public void writeRequestLineAndHeaders(OutputStream outputStream) throws IOException {
         outputStream.write(mMethod.getBytes());
@@ -71,13 +76,17 @@ public class Request {
         return port;
     }
 
-    public Headers getHeaders() { return mHeaders; }
+    public Headers headers() { return mHeaders; }
 
-    public Body getBody() { return mBody; }
+    public Body body() { return mBody; }
 
-    public String getHost() { return mHost; }
+    public String host() { return mHost; }
 
-    public int getPort() { return mPort; }
+    public String scheme() { return mScheme; }
+
+    public int port() { return mPort; }
+
+    public URI uri(){ return mURI; }
 
     @Override
     public int hashCode() {

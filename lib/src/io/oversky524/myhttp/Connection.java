@@ -1,5 +1,7 @@
 package io.oversky524.myhttp;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -21,10 +23,18 @@ public class Connection {
 
     public void setIdleAt(long idleAt){ mIdleAt = idleAt; }
 
-    Connection(String host, int port){
+    Connection(String scheme, String host, int port){
         try {
-            mSocket = new Socket(host, port);
-            mSocket.setSoTimeout(READ_TIMEOUT);
+            Socket socket;
+            if(scheme.equalsIgnoreCase("https")){
+                SSLSocket sslSocket = (SSLSocket) SSLSocketFactory.getDefault().createSocket(host, port);
+                sslSocket.startHandshake();
+                socket = sslSocket;
+            }else{
+                socket = new Socket(host, port);
+            }
+            socket.setSoTimeout(READ_TIMEOUT);
+            mSocket = socket;
             if(DEBUG){
                 System.out.println(mSocket + "\n");
             }
@@ -70,6 +80,11 @@ public class Connection {
         if(DEBUG) System.out.println(mSocket + " is closed safely");
     }
 
+    /**
+     * 重用连接时会调用该方法
+     * @return true，表示连接可读即可以重用；
+     *          false，表示已经到流尾，不可重用
+     * */
     private boolean readTest(){
         boolean result = false;
         try {

@@ -11,7 +11,7 @@ public class Response {
     private int mStatusCode = Integer.MIN_VALUE;
     private String mVersion;
     private Throwable mErrorThrowable;
-    private LinkedHashMap<String, String> mHeaders = new LinkedHashMap<>();
+    private Headers mHeaders = new Headers(true);
     private InputStream mInputStream;
     private byte[] mByteBody;
 
@@ -23,26 +23,26 @@ public class Response {
 
     void setErrorThrowable(Throwable errorThrowable){ mErrorThrowable = errorThrowable; }
 
-    public int getStatusCode(){ return mStatusCode; }
+    public int statusCode(){ return mStatusCode; }
 
     void setStatusCode(int code){ mStatusCode = code; }
 
     public Throwable getErrorThrowable(){ return mErrorThrowable; }
 
-    void putHeader(String header, String value){ mHeaders.put(header, value); }
+    void putHeader(String header, String value){ mHeaders.header(header, value); }
 
     void setInputStream(InputStream inputStream){ mInputStream = inputStream; }
 
-    public Map<String, String> getHeaders(){ return mHeaders; }
+    public Headers headers(){ return mHeaders; }
 
-    public byte[] getBytesBody() throws IOException {
+    public byte[] bytesBody() throws IOException {
         if(mErrorThrowable != null){
             mErrorThrowable.printStackTrace();
             return mErrorThrowable.getMessage().getBytes();
         }
         try {
             if(mByteBody == null) {
-                long length = Long.valueOf(mHeaders.get(HttpUtils.Header.CONTENT_LENGTH));
+                long length = Long.valueOf(mHeaders.header(HttpUtils.Header.CONTENT_LENGTH));
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
                 BufferedOutputStream outputStream = new BufferedOutputStream(byteArrayOutputStream);
                 BufferedInputStream inputStream = new BufferedInputStream(getInputStreamBody());
@@ -58,6 +58,10 @@ public class Response {
         }
         return mByteBody;
     }
+
+    public String stringBody() throws IOException { return new String(bytesBody()); }
+
+    public byte[] body() throws IOException { return bytesBody(); }
 
     public InputStream getInputStreamBody(){ return new BufferedInputStream(mInputStream); }
 
